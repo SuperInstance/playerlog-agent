@@ -1,21 +1,44 @@
 #!/usr/bin/env python3
-"""playerlog-agent — Game session tracking, stats, and achievements"""
+"""playerlog-agent — Game session tracking, stats, and achievements
+Now uses domain-agent-base for PLATO integration, health checks, and reporting.
+"""
 import json, time
-from typing import List, Dict, Optional
+from typing import List, Dict
 
-class PlayerLogAgent:
-    def __init__(self, plato_url="http://147.224.38.131:8847"):
-        self.plato_url = plato_url
+try:
+    from domain_agent_base import DomainAgent
+except ImportError:
+    class DomainAgent:
+        domain = "base"
+        plato_url = "http://147.224.38.131:8847"
+        def __init__(self):
+            self.tiles_submitted = []
+            self.errors = []
+            self.start_time = time.time()
+        def submit_tile(self, question, answer, room=None):
+            self.tiles_submitted.append({"q": question, "a": answer})
+            return True
+        def get_stats(self):
+            return {"domain": self.domain, "tiles": len(self.tiles_submitted)}
+        def run(self):
+            raise NotImplementedError
+
+class PlayerLogAgent(DomainAgent):
+    domain = "player"
+    version = "0.2.0"
+    
+    def __init__(self):
+        super().__init__()
         self.sessions: List[Dict] = []
         self.achievements: List[str] = []
     
     def log_session(self, game: str, duration_min: int, score: int, notes: str=""):
         sess = {"game": game, "duration": duration_min, "score": score, "notes": notes, "time": time.time()}
         self.sessions.append(sess)
-        self._submit(f"Played {game} for {duration_min}min", f"Score: {score}. {notes}")
+        self.submit_tile(f"Played {game} for {duration_min}min", f"Score: {score}. {notes}")
         return sess
     
-    def get_stats(self) -> Dict:
+    def get_game_stats(self) -> Dict:
         if not self.sessions: return {"error": "No sessions"}
         games = {}
         for s in self.sessions:
@@ -28,20 +51,24 @@ class PlayerLogAgent:
     
     def unlock_achievement(self, name: str):
         self.achievements.append(name)
-        self._submit(f"Achievement unlocked", name)
+        self.submit_tile(f"Unlocked achievement: {name}", f"Total achievements: {len(self.achievements)}")
     
-    def _submit(self, q: str, a: str):
-        try:
-            import urllib.request
-            urllib.request.urlopen(urllib.request.Request(f"{self.plato_url}/submit", data=json.dumps({"question": q, "answer": a, "agent": "playerlog-agent", "room": "playerlog"}).encode(), headers={"Content-Type": "application/json"}), timeout=5)
-        except: pass
+    def run(self):
+        print(f"PlayerLogAgent v{self.version} starting...")
+        self.log_session("Elden Ring", 120, 8500, "Defeated Malenia")
+        self.log_session("Hades", 45, 3200, "Escaped Tartarus")
+        self.log_session("Elden Ring", 90, 12000, "New build test")
+        self.unlock_achievement("First Boss")
+        self.unlock_achievement("Speedrunner")
+        stats = self.get_game_stats()
+        self.submit_tile("What are my gaming stats?", json.dumps(stats, indent=2))
+        print(f"Run complete. {len(self.sessions)} sessions, {len(self.achievements)} achievements, {len(self.tiles_submitted)} tiles")
 
-def demo():
-    a = PlayerLogAgent()
-    a.log_session("Elden Ring", 120, 4500, "Defeated Malenia")
-    a.log_session("Hades", 45, 3200, "Escaped Tartarus")
-    a.log_session("Elden Ring", 90, 3800, "Explored Caelid")
-    a.unlock_achievement("First Victory")
-    print(a.get_stats())
+def main():
+    agent = PlayerLogAgent()
+    agent.run()
+    print(f"\nStats: {json.dumps(agent.get_stats(), indent=2)}")
+    print(f"\nHealth: {json.dumps(agent.health_check(), indent=2)}")
 
-if __name__ == "__main__": demo()
+if __name__ == "__main__":
+    main()
