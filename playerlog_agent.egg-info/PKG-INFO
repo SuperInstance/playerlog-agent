@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: playerlog-agent
+Version: 0.1.0
+Summary: playerlog domain agent for PLATO fleet
+Project-URL: Homepage, https://github.com/SuperInstance/playerlog-agent
+Requires-Python: >=3.10
+Requires-Dist: requests>=2.28

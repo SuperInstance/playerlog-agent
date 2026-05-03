@@ -1,0 +1,9 @@
+README.md
+pyproject.toml
+playerlog_agent/__init__.py
+playerlog_agent.egg-info/PKG-INFO
+playerlog_agent.egg-info/SOURCES.txt
+playerlog_agent.egg-info/dependency_links.txt
+playerlog_agent.egg-info/requires.txt
+playerlog_agent.egg-info/top_level.txt
+tests/test_playerlog_agent.py
