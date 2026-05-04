@@ -6,7 +6,10 @@ name = "playerlog-agent"
 version = "0.2.0"
 description = "playerlog domain agent for PLATO fleet"
 requires-python = ">=3.10"
-dependencies = ["requests>=2.28"]
+dependencies = [
+    "fleet-agent>=0.2.0",
+    "requests>=2.28",
+]
 [project.urls]
 Homepage = "https://github.com/SuperInstance/playerlog-agent"
 dependencies = ["domain-agent-base @ git+https://github.com/SuperInstance/domain-agent-base.git"]
